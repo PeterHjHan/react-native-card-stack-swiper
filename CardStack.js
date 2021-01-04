@@ -70,12 +70,12 @@ class CardStack extends Component {
         // swipe left = movedX is negative, swipe Right = movedX is positive
         if ( movedX < 0 ) {
           !this.state.showLeftOverlay ? this.setState({ showLeftOverlay: true}) : null
-          // this.state.showRightOverlay ? this.setState({ showRightOverlay: false }) : null
+          this.state.showRightOverlay ? this.setState({ showRightOverlay: false }) : null
         }
 
         if ( movedX > 0 ) {
           !this.state.showRightOverlay ? this.setState({ showRightOverlay: true}) : null
-          // this.state.showLeftOverlay ? this.setState({ showLeftOverlay: false }) : null
+          this.state.showLeftOverlay ? this.setState({ showLeftOverlay: false }) : null
         }
       },
       onPanResponderTerminationRequest: (evt, gestureState) => true,
