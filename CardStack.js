@@ -29,6 +29,8 @@ class CardStack extends Component {
       topCard: 'cardA',
       cards: [],
       touchStart: 0,
+      showLeftOverlay: false,
+      showRightOverlay: false,
     };
     this.distance = this.constructor.distance;
     this._panResponder = PanResponder.create({
@@ -64,6 +66,15 @@ class CardStack extends Component {
         const dragDistance = this.distance((horizontalSwipe) ? gestureState.dx : 0, (verticalSwipe) ? gestureState.dy : 0);
         this.state.dragDistance.setValue(dragDistance);
         this.state.drag.setValue({ x: (horizontalSwipe) ? gestureState.dx : 0, y: (verticalSwipe) ? gestureState.dy : 0 });
+
+        // swipe left = movedX is negative, swipe Right = movedX is positive
+        if ( movedX < 0 ) {
+          !this.state.showLeftOverlay ? this.setState({ showLeftOverlay: true}) : null
+        }
+
+        if ( movedX > 0 ) {
+          !this.state.showRightOverlay ? this.setState({ showRightOverlay: true}) : null
+        }
       },
       onPanResponderTerminationRequest: (evt, gestureState) => true,
       onPanResponderRelease: (evt, gestureState) => {
@@ -142,7 +153,7 @@ class CardStack extends Component {
   }
 
   _getIndex(index, cards){
-    return this.props.loop ? 
+    return this.props.loop ?
       this.mod(index, cards):
       index;
   }
@@ -199,6 +210,12 @@ class CardStack extends Component {
         useNativeDriver: this.props.useNativeDriver || false,
       }
     ).start();
+    this.hideBothOverlay()
+  }
+
+  hideBothOverlay() {
+    !this.state.showLeftOverlay ? null : this.setState({showLeftOverlay: false})
+    !this.state.showRightOverlay ? null : this.setState({showRightOverlay: false})
   }
 
   goBackFromTop() {
@@ -317,6 +334,7 @@ class CardStack extends Component {
     if (index === cards.length - 1) {
       this.props.onSwipedAll();
     }
+    this.hideBothOverlay();
 
     if ((sindex - 2 < cards.length) || (loop)) {
       Animated.spring(
@@ -389,7 +407,6 @@ class CardStack extends Component {
     }
   }
 
-
   /**
    * @description CardB’s click feature is trigger the CardA on the card stack. (Solved on Android)
    * @see https://facebook.github.io/react-native/docs/view#pointerevents
@@ -400,8 +417,8 @@ class CardStack extends Component {
 
   render() {
 
-    const { secondCardZoom, renderNoMoreCards } = this.props;
-    const { drag, dragDistance, cardA, cardB, topCard, sindex } = this.state;
+    const { secondCardZoom, renderNoMoreCards, leftOverlayComponent, rightOverlayComponent } = this.props;
+    const { drag, dragDistance, cardA, cardB, topCard, sindex, showRightOverlay, showLeftOverlay } = this.state;
 
     const scale = dragDistance.interpolate({
       inputRange: [0, 10, 220],
@@ -418,6 +435,9 @@ class CardStack extends Component {
       <View {...this._panResponder.panHandlers} style={[{ position: 'relative' }, this.props.style]}>
 
         {renderNoMoreCards()}
+
+        { showLeftOverlay && leftOverlayComponent() }
+        { showRightOverlay && rightOverlayComponent() }
 
         <Animated.View
           {...this._setPointerEvents(topCard, 'cardB')}
@@ -484,6 +504,9 @@ CardStack.propTypes = {
   onSwipedAll: PropTypes.func,
   onSwipe: PropTypes.func,
 
+  leftOverlayComponent: PropTypes.oneOfType([PropTypes.func, PropTypes.element]),
+  rightOverlayComponent: PropTypes.oneOfType([PropTypes.func, PropTypes.element]),
+
   disableBottomSwipe: PropTypes.bool,
   disableLeftSwipe: PropTypes.bool,
   disableRightSwipe: PropTypes.bool,
@@ -515,6 +538,8 @@ CardStack.defaultProps = {
   onSwipedAll: async () => { },
   onSwipe: () => { },
 
+  rightOverlayComponent: () => {},
+  leftOverlayComponent : () => {},
   disableBottomSwipe: false,
   disableLeftSwipe: false,
   disableRightSwipe: false,
